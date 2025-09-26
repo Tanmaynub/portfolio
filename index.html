@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Cure - Crop Image Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            background: linear-gradient(45deg, #f8f9ff, #e6f0ff);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: linear-gradient(45deg, #e6f0ff, #f8f9ff);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: linear-gradient(45deg, #e8f5e8, #f0f8f0);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preview-section {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #f8f9ff, #e6f0ff);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .disease-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .confidence {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .disease-details {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .treatment-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .treatment-title {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .feature-description {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-card {
+                padding: 25px;
+            }
+            
+            .upload-area {
+                padding: 40px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Disease Cure</h1>
+            <p>AI-Powered Crop Disease Analysis & Treatment Recommendations</p>
+        </div>
+
+        <div class="main-card">
+            <div class="upload-section">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Click to upload or drag & drop your crop image</div>
+                    <div class="upload-subtext">Supports JPG, PNG, WebP files up to 10MB</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <br><br>
+                <button id="analyzeBtn" class="btn-primary" disabled>Analyze Crop Disease</button>
+            </div>
+
+            <div class="preview-section" id="previewSection">
+                <img id="previewImage" class="preview-image" alt="Preview">
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing your crop image... Please wait</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="results-section" id="resultsSection">
+                <h2 style="color: #333; margin-bottom: 20px; text-align: center;">🔍 Analysis Results</h2>
+                <div id="resultsContainer"></div>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <div class="feature-title">AI-Powered Analysis</div>
+                <div class="feature-description">Advanced machine learning algorithms analyze your crop images to identify diseases with high accuracy.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💊</div>
+                <div class="feature-title">Treatment Recommendations</div>
+                <div class="feature-description">Get detailed treatment plans and remedies to cure identified crop diseases effectively.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Instant Results</div>
+                <div class="feature-description">Receive immediate analysis results and start treating your crops without delay.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://crop.kindwise.com/api/v1/identification';
+        const API_KEY = 'A4hVe6jqHVlMsAl4GsuqNTUIESO24zferSHrdlkx7u3j3yvpuE';
+
+        let selectedFile = null;
+
+        // File input handling
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const uploadArea = document.querySelector('.upload-area');
+        const previewSection = document.getElementById('previewSection');
+        const previewImage = document.getElementById('previewImage');
+
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        analyzeBtn.addEventListener('click', analyzeCrop);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                selectedFile = file;
+                showPreview(file);
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                selectedFile = file;
+                showPreview(file);
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewSection.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeCrop() {
+            if (!selectedFile) return;
+
+            showLoading(true);
+            hideResults();
+            hideError();
+
+            try {
+                // Resize image if too large
+                const resizedImage = await resizeImage(selectedFile, 1024, 1024);
+                const base64Image = await convertToBase64(resizedImage);
+                
+                // Remove data URL prefix and get just the base64 string
+                const base64String = base64Image.split(',')[1];
+
+                const requestBody = {
+                    images: [base64String],
+                    similar_images: true
+                };
+
+                console.log('Sending request to:', API_URL);
+                console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Api-Key': API_KEY,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                console.log('Parsed response data:', data);
+                displayResults(data);
+            } catch (error) {
+                console.error('Analysis error:', error);
+                let errorMessage = 'Analysis failed: ' + error.message;
+                
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Network error: Unable to connect to the analysis service. Please check your internet connection and try again.';
+                } else if (error.message.includes('401')) {
+                    errorMessage = 'Authentication error: Invalid API key. Please check the API key configuration.';
+                } else if (error.message.includes('403')) {
+                    errorMessage = 'Access denied: You may have reached your API quota limit.';
+                } else if (error.message.includes('429')) {
+                    errorMessage = 'Rate limit exceeded: Please wait a moment before trying again.';
+                }
+                
+                showError(errorMessage);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function resizeImage(file, maxWidth, maxHeight) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // Calculate new dimensions
+                    let { width, height } = img;
+                    
+                    if (width > maxWidth || height > maxHeight) {
+                        const ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw and compress
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                };
+                
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function displayResults(data) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '';
+
+            console.log('Full API response:', data);
+
+            // Handle different possible response structures
+            let suggestions = [];
+            
+            if (data.result && data.result.disease && data.result.disease.suggestions) {
+                suggestions = data.result.disease.suggestions;
+            } else if (data.result && data.result.classification && data.result.classification.suggestions) {
+                suggestions = data.result.classification.suggestions;
+            } else if (data.suggestions) {
+                suggestions = data.suggestions;
+            } else if (data.result && Array.isArray(data.result)) {
+                suggestions = data.result;
+            }
+
+            console.log('Extracted suggestions:', suggestions);
+
+            if (!suggestions || suggestions.length === 0) {
+                // Try to show any available information
+                if (data.result && data.result.is_healthy) {
+                    showHealthyResult();
+                    return;
+                }
+                
+                showError('No diseases detected in this image. The crop appears to be healthy, or the image may need better lighting/focus for analysis. Try taking a clearer photo of affected plant areas.');
+                return;
+            }
+
+            // Filter and sort suggestions by probability
+            const validSuggestions = suggestions
+                .filter(s => s.probability > 0.1) // Only show suggestions with >10% confidence
+                .sort((a, b) => b.probability - a.probability)
+                .slice(0, 3);
+
+            if (validSuggestions.length === 0) {
+                showHealthyResult();
+                return;
+            }
+            
+            validSuggestions.forEach(suggestion => {
+                const resultCard = createResultCard(suggestion);
+                resultsContainer.appendChild(resultCard);
+            });
+
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function showHealthyResult() {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div class="result-card" style="border-left-color: #28a745;">
+                    <div class="disease-name">✅ Healthy Crop Detected</div>
+                    <div class="confidence" style="background: linear-gradient(135deg, #28a745, #20c997);">High Confidence</div>
+                    <div class="disease-details">
+                        Great news! Your crop appears to be healthy with no visible diseases detected in this image.
+                    </div>
+                    <div class="treatment-section">
+                        <div class="treatment-title">🌱 Preventive Care Recommendations:</div>
+                        <div class="disease-details">
+                            • Continue regular monitoring for early disease detection<br>
+                            • Maintain proper watering and fertilization schedule<br>
+                            • Ensure adequate spacing between plants for air circulation<br>
+                            • Practice crop rotation to prevent soil-borne diseases<br>
+                            • Keep the growing area clean and free from debris<br>
+                            • Monitor weather conditions and adjust care accordingly
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function createResultCard(suggestion) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+
+            const confidence = Math.round((suggestion.probability || 0) * 100);
+            const diseaseName = suggestion.name || suggestion.disease_name || 'Disease Detected';
+            
+            // Extract disease details from various possible locations
+            let causeInfo = '';
+            let treatmentInfo = '';
+            let description = '';
+
+            // Try to get details from different possible structures
+            const details = suggestion.disease_details || suggestion.details || {};
+            
+            if (details.cause || suggestion.cause) {
+                causeInfo = `
+                    <div class="disease-details">
+                        <strong>Cause:</strong> ${details.cause || suggestion.cause}
+                    </div>
+                `;
+            }
+
+            if (details.description || suggestion.description) {
+                description = `<div class="disease-details">${details.description || suggestion.description}</div>`;
+            } else {
+                description = '<div class="disease-details">Disease identified through AI image analysis. Please review the treatment recommendations below and consult with agricultural experts if needed.</div>';
+            }
+
+            if (details.treatment || suggestion.treatment) {
+                treatmentInfo = `
+                    <div class="treatment-section">
+                        <div class="treatment-title">🩺 Treatment Recommendations:</div>
+                        <div class="disease-details">${details.treatment || suggestion.treatment}</div>
+                    </div>
+                `;
+            } else {
+                // Provide general treatment based on disease name or type
+                let specificTreatment = getSpecificTreatment(diseaseName.toLowerCase());
+                treatmentInfo = `
+                    <div class="treatment-section">
+                        <div class="treatment-title">🩺 Treatment Recommendations:</div>
+                        <div class="disease-details">${specificTreatment}</div>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="disease-name">${diseaseName}</div>
+                <div class="confidence">${confidence}% Confidence</div>
+                ${causeInfo}
+                ${description}
+                ${treatmentInfo}
+            `;
+
+            return card;
+        }
+
+        function getSpecificTreatment(diseaseName) {
+            // Provide specific treatments based on common disease patterns
+            if (diseaseName.includes('blight') || diseaseName.includes('leaf spot')) {
+                return `
+                    • Remove and destroy infected plant parts immediately<br>
+                    • Apply copper-based fungicide every 7-14 days<br>
+                    • Improve air circulation around plants<br>
+                    • Avoid overhead watering; water at soil level<br>
+                    • Consider resistant varieties for future planting
+                `;
+            } else if (diseaseName.includes('rust')) {
+                return `
+                    • Remove infected leaves and dispose of properly<br>
+                    • Apply sulfur-based or triazole fungicides<br>
+                    • Ensure good air circulation<br>
+                    • Avoid working with plants when wet<br>
+                    • Practice crop rotation
+                `;
+            } else if (diseaseName.includes('powdery mildew')) {
+                return `
+                    • Spray with baking soda solution (1 tsp per quart water)<br>
+                    • Apply sulfur-based fungicide<br>
+                    • Improve air circulation and reduce humidity<br>
+                    • Remove infected plant parts<br>
+                    • Avoid overhead watering
+                `;
+            } else if (diseaseName.includes('wilt')) {
+                return `
+                    • Remove infected plants immediately<br>
+                    • Improve soil drainage<br>
+                    • Avoid overwatering<br>
+                    • Disinfect tools between plants<br>
+                    • Consider soil solarization<br>
+                    • Use disease-resistant varieties
+                `;
+            } else {
+                return `
+                    • Remove and destroy affected plant parts<br>
+                    • Improve air circulation around plants<br>
+                    • Apply appropriate fungicide or bactericide as directed<br>
+                    • Ensure proper watering practices (avoid overwatering)<br>
+                    • Monitor plants regularly for disease progression<br>
+                    • Consult with local agricultural extension services for specific treatments
+                `;
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            analyzeBtn.disabled = show;
+            analyzeBtn.textContent = show ? 'Analyzing...' : 'Analyze Crop Disease';
+        }
+
+        function hideResults() {
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
